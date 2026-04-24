@@ -31,6 +31,7 @@ export class UrlService {
   }
 
   private generateShortKey(): string {
+    // 6바이트 = 48비트 → 최대 281조 경우의 수. 충돌 확률이 사실상 0에 수렴
     return encode(BigInt('0x' + randomBytes(6).toString('hex')));
   }
 
@@ -48,6 +49,7 @@ export class UrlService {
         });
         return { shortUrl: `${this.baseUrl}/${shortKey}` };
       } catch (e: any) {
+        // 23505: PostgreSQL unique_violation. 키 충돌이면 재시도, 그 외는 즉시 rethrow
         if (e.code !== '23505') throw e;
       }
     }
@@ -94,6 +96,7 @@ export class UrlService {
     const elapsed = (Date.now() - entry.storedAt) / 1000;
     const remainingTtl = entry.ttl - elapsed;
 
+    // PER 공식: remainingTtl > -beta * ln(rand). TTL이 짧을수록 조기 갱신 확률이 높아짐
     if (remainingTtl > -this.cacheBeta * Math.log(Math.random())) {
       return entry;
     }

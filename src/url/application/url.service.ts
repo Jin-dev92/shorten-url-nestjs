@@ -9,6 +9,8 @@ import { UrlExpiredException } from '../domain/exception/url-expired.exception';
 import { encode } from '../../shared/utils/base62';
 import { AppConfig, ENV_KEY } from '../../common/constants/env';
 
+const PG_UNIQUE_VIOLATION = '23505';
+
 @Injectable()
 export class UrlService {
   private readonly baseUrl: string;
@@ -49,8 +51,8 @@ export class UrlService {
         });
         return { shortUrl: `${this.baseUrl}/${shortKey}` };
       } catch (e: any) {
-        // 23505: PostgreSQL unique_violation. 키 충돌이면 재시도, 그 외는 즉시 rethrow
-        if (e.code !== '23505') throw e;
+        // unique_violation이면 재시도, 그 외는 즉시 rethrow
+        if (e.code !== PG_UNIQUE_VIOLATION) throw e;
       }
     }
     throw new Error('단축 URL 키 생성에 실패했습니다');
